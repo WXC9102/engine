@@ -120,7 +120,7 @@ type Engine struct {
 	Console
 	LogLevel            string        `default:"info"`
 	RTPReorderBufferLen int           `default:"50"`    //RTP重排序缓冲长度
-	SpeedLimit          time.Duration `default:"500ms"` //速度限制最大等待时间
+	SpeedLimit          time.Duration `default:"0ms"` //速度限制最大等待时间
 	EventBusSize        int           `default:"10"`    //事件总线大小
 }
 
