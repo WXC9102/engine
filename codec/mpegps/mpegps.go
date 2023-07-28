@@ -43,6 +43,8 @@ func (ps *MpegPsStream) Drop() {
 	ps.video.Reset()
 }
 
+var BadStartCode = errors.New("start code error")
+
 func (ps *MpegPsStream) Feed(data util.Buffer) (err error) {
 	reader := &data
 	if ps.buffer.CanRead() {
@@ -52,6 +54,10 @@ func (ps *MpegPsStream) Feed(data util.Buffer) (err error) {
 	var begin util.Buffer
 	var payload []byte
 	defer func() {
+		if err == BadStartCode {
+			ps.buffer.Reset()
+			return
+		}
 		if err != nil && begin.CanRead() {
 			ps.buffer.Reset()
 			ps.buffer.Write(begin)
@@ -98,7 +104,7 @@ func (ps *MpegPsStream) Feed(data util.Buffer) (err error) {
 		case MEPGProgramEndCode:
 			return
 		default:
-			err = errors.New("start code error")
+			err = BadStartCode
 		}
 	}
 	return
