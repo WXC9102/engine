@@ -61,6 +61,9 @@ func (t *TSPublisher) OnPmtStream(s mpegts.MpegTsPmtStream) {
 
 func (t *TSPublisher) ReadPES() {
 	for pes := range t.PESChan {
+		if t.Err() != nil {
+			continue
+		}
 		if pes.Header.Dts == 0 {
 			pes.Header.Dts = pes.Header.Pts
 		}

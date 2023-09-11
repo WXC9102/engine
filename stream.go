@@ -130,8 +130,9 @@ type StreamTimeoutConfig struct {
 }
 type Tracks struct {
 	sync.Map
-	MainVideo *track.Video
-	SEI       *track.Data[[]byte]
+	MainVideo   *track.Video
+	SEI         *track.Data[[]byte]
+	marshalLock sync.Mutex
 }
 
 func (tracks *Tracks) Range(f func(name string, t Track)) {
@@ -191,6 +192,8 @@ func (tracks *Tracks) AddSEI(t byte, data []byte) bool {
 
 func (tracks *Tracks) MarshalJSON() ([]byte, error) {
 	var trackList []Track
+	tracks.marshalLock.Lock()
+	defer tracks.marshalLock.Unlock()
 	tracks.Range(func(_ string, t Track) {
 		t.SnapForJson()
 		trackList = append(trackList, t)
@@ -238,6 +241,10 @@ func (s *Stream) GetStartTime() time.Time {
 }
 
 func (s *Stream) GetPublisherConfig() *config.Publish {
+	if s.Publisher == nil {
+		s.Error("GetPublisherConfig: Publisher is nil")
+		return nil
+	}
 	return s.Publisher.GetPublisher().Config
 }
 
@@ -343,14 +350,18 @@ func (r *Stream) action(action StreamAction) (ok bool) {
 				r.timeout.Reset(r.DelayCloseTimeout)
 			}
 		case STATE_CLOSED:
+			Streams.Delete(r.Path)
+			r.timeout.Stop()
+			r.Subscribers.Dispose()
 			for !r.actionChan.Close() {
 				// 等待channel发送完毕，伪自旋锁
 				time.Sleep(time.Millisecond * 100)
 			}
 			stateEvent = SEclose{event}
 			r.Subscribers.Broadcast(stateEvent)
-			Streams.Delete(r.Path)
-			r.timeout.Stop()
+			r.Tracks.Range(func(_ string, t Track) {
+				t.Dispose()
+			})
 		}
 		EventBus <- stateEvent
 		if r.Publisher != nil {
