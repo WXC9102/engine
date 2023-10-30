@@ -33,6 +33,7 @@ func NewH265(stream IStream, stuff ...any) (vt *H265) {
 func (vt *H265) WriteSliceBytes(slice []byte) {
 	t := codec.ParseH265NALUType(slice[0])
 	// fmt.Println("H265 NALU Type:", t)
+    vt.Debug("h265 naluType", zap.Uint8("naluType", byte(t)))
 	switch t {
 	case codec.NAL_UNIT_VPS:
 		vt.VPS = slice
