@@ -507,11 +507,6 @@ func (s *Stream) run() {
 		case action, ok := <-s.actionChan.C:
 			if !ok {
 				return
-			} else if s.State == STATE_CLOSED {
-				if s.actionChan.Close() { //再次尝试关闭
-					return
-				}
-				continue
 			}
 			timeStart = time.Now()
 			switch v := action.(type) {
@@ -522,6 +517,7 @@ func (s *Stream) run() {
 				timeOutInfo = zap.String("action", "Publish")
 				if s.IsClosed() {
 					v.Reject(ErrStreamIsClosed)
+                    break
 				}
 				puber := v.Value.GetPublisher()
 				conf := puber.Config
