@@ -517,7 +517,7 @@ func (s *Stream) run() {
 				timeOutInfo = zap.String("action", "Publish")
 				if s.IsClosed() {
 					v.Reject(ErrStreamIsClosed)
-                    break
+					break
 				}
 				puber := v.Value.GetPublisher()
 				conf := puber.Config
@@ -561,6 +561,7 @@ func (s *Stream) run() {
 				timeOutInfo = zap.String("action", "Subscribe")
 				if s.IsClosed() {
 					v.Reject(ErrStreamIsClosed)
+					break
 				}
 				suber := v.Value
 				io := suber.GetSubscriber()
