@@ -11,6 +11,13 @@ type RingReader[T any, F common.IDataFrame[T]] struct {
 }
 
 func (r *RingReader[T, F]) StartRead(ring *util.Ring[F]) (err error) {
+	defer func() {
+		if err1 := recover(); err1 != nil {
+			if err == nil {
+				err = ErrDiscard
+			}
+		}
+	}()
 	r.Ring = ring
 	if r.Value.IsDiscarded() {
 		return ErrDiscard
